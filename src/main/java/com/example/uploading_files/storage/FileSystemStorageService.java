@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -16,10 +18,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.uploading_files.UploadingFilesApplication;
+
 @Service
 public class FileSystemStorageService implements StorageService {
 
     private final Path rootLocation;
+
+    private static final Logger log = LoggerFactory.getLogger(UploadingFilesApplication.class);
 
     @Autowired
     public FileSystemStorageService(StorageProperties properties) {
@@ -52,6 +58,25 @@ public class FileSystemStorageService implements StorageService {
     @Override
     public Stream<Path> loadAll() {
         try {
+            // rootLocationのフォルダーのパスとその配下のパスを取得する
+            Stream<Path> fileWalking = Files.walk(this.rootLocation, 1);
+            fileWalking.forEach(path -> {
+                log.info("~~~~~fileWalking~~~~~~" + path.toString());
+            });
+
+            // rootLocationのpathと一致しないパスのみをfilter(rootLocationと一致しない子ディレクトリのパス)した値を返す
+            Stream<Path> pathsFilter = Files.walk(this.rootLocation, 1)
+                    .filter(path -> !path.equals(this.rootLocation));
+            pathsFilter.forEach(path -> {
+                log.info("~~~~~pathsFilter~~~~~~" + path.toString());
+            });
+            Stream<Path> checkPath = Files.walk(this.rootLocation, 1)
+                    .filter(path -> !path.equals(this.rootLocation))
+                    .map(this.rootLocation::relativize);
+
+            checkPath.forEach(path -> {
+                log.info("~~~~~checkPath~~~~~~" + path.toString());
+            });
             return Files.walk(this.rootLocation, 1)
                     .filter(path -> !path.equals(this.rootLocation))
                     .map(this.rootLocation::relativize);
